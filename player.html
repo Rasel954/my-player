@@ -3,35 +3,43 @@
 <head>
 <title>Live Stream Player</title>
 <style>
-  /* Optional: Make player fill the whole page */
   body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
   #video { width: 100%; height: 100%; background: #000; }
+  .error { color: white; text-align: center; padding-top: 40vh; font-family: sans-serif; }
 </style>
-<!-- HLS.js library for playing M3U8 streams -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
 
 <video id="video" controls autoplay></video>
+<div id="error-message" class="error" style="display:none;">Channel link not found.</div>
 
 <script>
   var video = document.getElementById('video');
-  var videoSrc = 'https://rtatv.akamaized.net/Content/HLS/Live/channel(RTA3)/index.m3u8'; // আপনার m3u8 লিঙ্কটি এখানে দিন
+  var errorMessage = document.getElementById('error-message');
+  
+  // Get the channel link from the URL parameter (?channel=...)
+  const urlParams = new URLSearchParams(window.location.search);
+  const videoSrc = urlParams.get('channel');
 
-  if (Hls.isSupported()) {
-    var hls = new Hls();
-    hls.loadSource(videoSrc);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, function() {
-      video.play();
-    });
-  }
-  // For Safari and other native HLS players
-  else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = videoSrc;
-    video.addEventListener('loadedmetadata', function() {
-      video.play();
-    });
+  if (videoSrc) {
+    if (Hls.isSupported()) {
+      var hls = new Hls();
+      hls.loadSource(videoSrc);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play().catch(e => console.log("Autoplay was blocked"));
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = videoSrc;
+      video.addEventListener('loadedmetadata', function() {
+        video.play().catch(e => console.log("Autoplay was blocked"));
+      });
+    }
+  } else {
+    // If no channel link is found, hide video and show error
+    video.style.display = 'none';
+    errorMessage.style.display = 'block';
   }
 </script>
 
